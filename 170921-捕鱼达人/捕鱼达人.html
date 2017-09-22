@@ -17,15 +17,24 @@
 		    canvas{
 		      background: url("./img/game_bg_2_hd.jpg");
 		    }
+		    div{
+		    	height: 30px;
+		    	color: gold;
+		    	font-size: 30px;
+		    	margin: 0 auto;
+		    };
+		
 		  </style>
 
 	</head>
 	<body>
 		<canvas id="c1" width="800" height="600"></canvas>
+		<div id="coin"></div>
 	</body>
 </html>
 <!--资源-->
 <script>
+	
 	function fn(n){
 		return n*Math.PI/180;
 	}
@@ -39,9 +48,9 @@
 	
 	
 	 const resource=[
-      'fish1','fish2','fish3','fish4','fish5',
+      'fish1','fish2','fish3','fish4','fish5','fish6','fish7','fish8','fish9','fish10','fish11','fish12',
       'cannon1','cannon2','cannon3','cannon4','cannon5','cannon6','cannon7',
-      'bottom','bullet','coinAni1','coinAni2','web'
+      'bottom','bullet','coinAni1','coinAni2','web','coinText'
     ];
 </script>
 
@@ -68,16 +77,74 @@
      	}
     }
   </script>
-
+  
+  <!--分数-->
+<script>
+	/*var coinTexts = {
+		'0' : { sx: 0, w: 36, h: 49},//0
+		'1' : { sx: 36, w: 36, h: 49},//1
+		'2' : { sx: 72, w: 36, h: 49},//2
+		'3' : { sx: 108, w: 36, h: 49},//3
+		'4' : { sx: 144, w: 36, h: 49},//4
+		'5' : { sx: 180, w: 36, h: 49},//5
+		'6' : { sx: 216, w: 36, h: 49},//6
+		'7' : { sx: 252, w: 36, h: 49},//7
+		'8' : { sx: 288, w: 36, h: 49},//8
+		'9' : { sx: 324, w: 36, h: 49},//9
+		'x' : { sx: 360, w: 36, h: 49}//x
+	};*/
+	
+	class CoinText{
+		constructor(f){
+	        this.type=f.type||1;
+	        this.x=f.x;
+	        this.y=f.y;
+	        this.timer=null;
+	        if(this.type>=10){
+	        	this.type=9
+	        }
+        }
+        draw(gd){
+	        gd.save();
+	        gd.drawImage(JSON['coinText'],
+	          360,0,36,49,
+	          this.x-36,this.y-49,36,49
+        	);
+        	gd.restore();
+        	
+        	gd.save();
+	        gd.drawImage(JSON['coinText'],
+	          this.type*36,0,36,49,
+	          this.x,this.y-49,36,49
+        	);
+        	gd.restore();
+        	
+        	gd.save();
+	        gd.drawImage(JSON['coinText'],
+	          0,0,36,49,
+	          this.x+36,this.y-49,36,49
+        	);
+        	gd.restore();
+        }
+	}
+</script>
 <!--FISH类-->
  <script>
     var FISH_SIZE=[
       null,
-      {w: 55, h: 37, collR: 27},
-      {w: 78, h: 64, collR: 34},
-      {w: 72, h: 56, collR: 30},
-      {w: 77, h: 59, collR: 32},
-      {w: 107, h: 122, collR: 39}
+      {w: 55, h: 37, collR: 27, m : 4, n : 7, s : 1,},
+      {w: 78, h: 64, collR: 34, m : 4, n : 7, s : 2,},
+      {w: 72, h: 56, collR: 30, m : 4, n : 7, s : 3,},
+      {w: 77, h: 59, collR: 32, m : 4, n : 7, s : 4,},
+      {w: 107, h: 122, collR: 39, m : 4, n : 7, s : 5,},
+      {w: 105, h: 79, collR: 34, m : 8, n : 13, s : 6,},
+      {w: 92, h: 151, collR: 70, m : 6, n : 11, s : 7,},
+      {w: 174, h: 126, collR: 60, m : 8, n : 13, s : 7,},
+      {w: 166, h: 183, collR: 90, m : 8, n : 13, s : 8,},
+      {w: 178, h: 187, collR: 90, m : 6, n : 11, s : 8,},
+      {w: 509, h: 270, collR: 130, m : 8, n : 13, s : 9,},
+      {w: 516, h: 273, collR: 130, m : 8, n : 13, s : 10,}
+      
     ];
 
  	class Fish{
@@ -85,14 +152,19 @@
  			this.type=type;
  			this.speed=1;
  			this.collR=0;
+ 			this.coin=FISH_SIZE[this.type].coin;
  			this.x=0;
  			this.y=0;
+ 			this.m=FISH_SIZE[this.type].m;
+ 			this.n=FISH_SIZE[this.type].n;
  			this.rotate=0;
  			this.cur=0;
  			this.timer1=null;
  			this.timer2=null;
  			this.timer3=null;
  			this.move();
+ 			this.sum=0;
+ 			this.s=FISH_SIZE[this.type].s;
  			
  		}
  		draw(gd){
@@ -121,7 +193,7 @@
  			}.bind(this),16)
  			this.timer2=setInterval(function(){
  				this.cur++
- 				if(this.cur>=4){
+ 				if(this.cur>=this.m){
  					this.cur=0;
  				}
  			}.bind(this),300)
@@ -136,25 +208,6 @@
  				return false;
  			}
  		}
- 		dead(){
- 			clearInterval(this.timer1)
- 			clearInterval(this.timer2)
- 			clearInterval(this.timer3);
- 			this.timer3=setInterval(function(){
- 				this.w=0;
- 				this.h=0;
- 				this.cur++
- 				if(this.cur>=8){
- 					
- 					console.log(this.collR)
- 					this.collR=0;
- 					console.log(this.collR)
- 					clearInterval(this.timer3);
- 				}
- 			}.bind(this),100)
- 			
- 		}
- 		
  	}
  	
  	class Dead{
@@ -162,11 +215,11 @@
     		this.type=f.type||1
     		this.x=f.x;
     		this.y=f.y;
+    		this.n=f.n
     		this.rotate=f.rotate;
-    		this.cur=5;
-    		
+    		this.cur=f.m+1;
     		this.move();
-    		this.timer2=null;
+    		
     	}
     	draw(gd){
 	        var w=FISH_SIZE[this.type].w;
@@ -184,14 +237,13 @@
 	        gd.restore();
         }
     	move(){
-    		//clearInterval(this.timer2)
-	    	this.timer2=setInterval(function(){
+    		
+	    	var timer2=setInterval(function(){
 		       this.cur++;
-		       //console.log(this.cur)
-		        if(this.cur>=7){
+		      // console.log(this.cur)
+		        if(this.cur>=this.n){
 		        	this.cur=5
-		        	clearInterval(this.timer2)
-			       
+		        	clearInterval(timer2)
 		        } 
 	        }.bind(this),100);
     	}
@@ -235,6 +287,7 @@
         clearInterval(timer);
         var timer=setInterval(function() {
           _this.cur++;
+          
           if(_this.cur==5){
             _this.cur=0;
             clearInterval(timer);
@@ -264,6 +317,7 @@
         this.speed=15;
         this.timer=null;
         this.move();
+        this.playSong()
       }
       draw(gd){
         var w=BULLET_SIZE[this.type].w;
@@ -282,20 +336,24 @@
       	move(){
 	        clearInterval(this.timer);
 	        this.timer=setInterval(function(){
-	          this.x+=Math.sin(fn(this.rotate))*this.speed;
-	          this.y-=Math.cos(fn(this.rotate))*this.speed;
-	          //console.log('...');
+		        this.x+=Math.sin(fn(this.rotate))*this.speed;
+		        this.y-=Math.cos(fn(this.rotate))*this.speed;
 	        }.bind(this),30);
      	}
-      	/*dead(){
-      		gd.drawImage(JSON['bullet'],
-	          x,y,w,h,
-	          -w/2,-h/2,w,h
-	        );
-      	}*/
+      	playSong(){
+      		var oA=new Audio();
+      		oA.src="snd/5884.mp3";
+      		oA.volume=0.03
+      		oA.play()
+      		setTimeout(function(){
+      			oA.pause()
+      		},300)
+      		
+      	}
+     
     }
     
-    
+    //网
     var webs = [
     		null,
 			{ sx : 319, sy : 355, w : 116, h : 118},
@@ -336,20 +394,88 @@
 	        this.timer=setInterval(function(){
 	          this.dis+=0.25
 	          if(this.dis>=1){
+	          	 this.dis=1
 	          	clearInterval(this.timer);
 	          }
 	        }.bind(this),50);
      	}
     }
     
-    
-    
+    //金币
+	class Coin{
+		constructor(f){
+	        this.type=f.type||1;
+	        this.x=f.x;
+	        this.y=f.y;
+	        this.cur=0;
+	        this.scale=1;
+	        this.timer=null;
+	        this.move();
+	        this.playSong();
+      	}
+	    draw(gd){
+	        var w=60
+	        var h=60
+	        gd.save();
+	        gd.translate(this.x,this.y);
+	        gd.scale(this.scale,this.scale)
+	        switch (this.type){
+		        case 1:
+		        case 2:
+		        case 3:
+		        case 4:
+		        case 5:
+		       		gd.drawImage(JSON['coinAni1'],
+		              0,this.cur*60,60,60,
+		              -60/2,-60/2,60,60
+		            );
+		            break;
+		        case 6:
+		        case 7:
+		        case 8:
+		        case 9:
+		        case 10:
+		        case 11:
+		        case 12:
+		        	gd.drawImage(JSON['coinAni2'],
+		              0,this.cur*60,60,60,
+		              -60/2,-60/2,60,60
+		            );
+		            break;
+        	}
+	        gd.restore();
+	      }
+      	move(){
+	        clearInterval(this.timer);
+	        this.timer=setInterval(function(){
+	          	this.scale-=0.1;
+	          	this.x+=(30-this.x)/5;
+	          	this.y+=(600-this.y)/5;
+	        	if(this.scale<=0){
+	        		this.scale=0
+	          		clearInterval(this.timer);
+	        	}
+	        }.bind(this),50);
+     	}
+      	playSong(){
+      		var oA=new Audio();
+      		oA.src="snd/coin.wav";
+      		oA.volume=0.03
+      		oA.play()
+      	}
+	}
     
   </script>
 
 
 <script>
 window.onload = function () {
+	window.getSelection().removeAllRanges()
+	/*var bgAudio=new Audio();
+	bgAudio.src="snd/4621.mp3";
+	bgAudio.volume=0.1
+	bgAudio.play();
+	bgAudio.loop=true;*/
 	var oC=document.querySelector('#c1');
 	var gd=oC.getContext('2d');
 	loadImage(resource,init);
@@ -360,23 +486,30 @@ window.onload = function () {
 			var arrFish=[];//收集鱼
 			var aDeadFish=[];//收集死鱼
 			var aWebs=[];//收集网
+			var arrCoin=[];//收集分数
+			var arrMoney=[]
+			var sum=300;
 			//统一绘制
-			setInterval(function(){
+			var Stimer=setInterval(function(){
 				gd.clearRect(0,0,oC.width,oC.height);
-				
 				
 				//绘制鱼
 				if(Math.random()<0.03){
 					var f = new Fish(rand(1,6))
-					
 					if(Math.random()<0.5){
-						f.x=-100;
+						var f = new Fish(rand(6,11))
+					}
+					if(Math.random()<0.05){
+						var f = new Fish(rand(11,13))
+					}
+					if(Math.random()<0.5){
+						f.x=-280;
 						f.rotate=rand(-45,45)
 					}else{
-						f.x=oC.width+100;
+						f.x=oC.width+280;
 						f.rotate=rand(135,225)
 					}
-					f.y=rand(100,oC.height-100);
+					f.y=rand(280,oC.height-280);
 					f.speed=rand(1,3)
 					arrFish.push(f);
 				}
@@ -395,18 +528,16 @@ window.onload = function () {
 					0,0,765,70,
 					0,532,765,70
 					);
-				
-				
 				//绘制炮筒
 				c.draw(gd);
 				
 				//优化
 				for(var i=0;i<arrBullet.length;i++){
 					if(
-					    arrBullet[i].x<-100 ||
-					    arrBullet[i].x>oC.width+100 ||
-					    arrBullet[i].y<-100 ||
-					    arrBullet[i].y>oC.height+100
+					    arrBullet[i].x<-510 ||
+					    arrBullet[i].x>oC.width+510 ||
+					    arrBullet[i].y<-510 ||
+					    arrBullet[i].y>oC.height+510
 					){
 					    clearInterval(arrBullet[i].timer);
 					        arrBullet.splice(i,1);
@@ -416,42 +547,61 @@ window.onload = function () {
 				}
 				for(var i=0;i<arrFish.length;i++){
 					if(
-					    arrFish[i].x<-100 ||
-					    arrFish[i].x>oC.width+100 ||
-					    arrFish[i].y<-100 ||
-					    arrFish[i].y>oC.height+100
+					    arrFish[i].x<-510 ||
+					    arrFish[i].x>oC.width+510 ||
+					    arrFish[i].y<-510 ||
+					    arrFish[i].y>oC.height+510
 					){
 					    clearInterval(arrFish[i].timer1);
 					    clearInterval(arrFish[i].timer2);
 					    //clearInterval(arrFish[i].timer3);
 					    
 					    arrFish.splice(i,1);//剔除实例
-					      
-					      //console.log(arrFish.length)
 					    }
 				}
 				
 				//碰撞检测；
+				
 				for(var i=0;i<arrFish.length;i++){
 					for(var j=0;j<arrBullet.length;j++){
 						var bl=arrFish[i].isIn(arrBullet[j].x,arrBullet[j].y);
 						if(bl){
 							//创建死鱼
-							var dead=new Dead(arrFish[i]);
-							aDeadFish.push(dead);
-							(function(odf){
-								setTimeout(function(){
-									for(var t = 0; t< aDeadFish.length; t++){
-										if(aDeadFish[t] == odf){
-											clearInterval(aDeadFish[t].timer2)
-											aDeadFish.splice(t, 1);
-											break;
+							arrFish[i].sum++
+							if(arrFish[i].sum==arrFish[i].s){
+								var dead=new Dead(arrFish[i]);
+								aDeadFish.push(dead);
+								(function(odf){
+									setTimeout(function(){
+										for(var t = 0; t< aDeadFish.length; t++){
+											if(aDeadFish[t] == odf){
+												aDeadFish.splice(t, 1);
+												break;
+											}
 										}
-									}
-								},400);
-							})(dead);
-							arrFish.splice(i, 1);
-							
+									},400);
+								})(dead);
+								//创建金币
+								var coin=new Coin(arrFish[i]);
+								arrCoin.push(coin);
+								coin.x=arrFish[i].x;
+	               				coin.y=arrFish[i].y;
+								setTimeout(function(){
+									arrCoin.shift()
+								},1000);
+								//创建分数
+								var money=new CoinText(arrFish[i]);
+								arrMoney.push(money);
+								money.x=arrFish[i].x;
+	               				money.y=arrFish[i].y;
+	               				sum+=money.type*10;
+	               				//console.log(sum);
+								setTimeout(function(){
+									arrMoney.shift()
+								},1000);
+								
+								arrFish.splice(i, 1);
+							}
 							//创建网
 							var ws=new Webs(arrBullet[j]);
 							aWebs.push(ws);
@@ -460,29 +610,43 @@ window.onload = function () {
 									for(var s = 0; s< aWebs.length;s++){
 										if(aWebs[s] == odf){
 											clearInterval(aWebs[s].timer)
-											console.log(aWebs.length);
+											//console.log(aWebs.length);
 											aWebs.splice(s, 1);
 											break;
 										}
 									}
 								},400);
 							})(ws);
-							//clearInterval(arrBullet[j].timer)
 							arrBullet.splice(j,1)
-							
 						}
 					}
 				}
+				//绘制死鱼
 				for(var i=0;i<aDeadFish.length;i++){
 				    aDeadFish[i].draw(gd);
 				}
+				//绘制网
 				for(var i=0;i<aWebs.length;i++){
 				    aWebs[i].draw(gd);
 				}
-				
+				//绘制金币
+				for(var i=0;i<arrCoin.length;i++){
+				    arrCoin[i].draw(gd);
+				}
+				//绘制money
+				for(var i=0;i<arrCoin.length;i++){
+				    arrMoney[i].draw(gd);
+				}
+
+				gd.fillStyle="gold";
+				gd.font="30px a"
+				gd.fillText('￥'+String(sum),100,oC.height-50);
 				
 			},16);
 			    //交互
+			    setInterval(function(){
+			    	sum-=2
+			    },1000)
 			    oC.onclick=function(ev){
 				    var x=ev.clientX-oC.offsetLeft-c.x;
 				    var y=c.y-(ev.clientY-oC.offsetTop);
@@ -490,7 +654,13 @@ window.onload = function () {
 				    c.rotate=d;//规定炮角度
 				    //发射动作
 				    c.emit();
-				
+					sum-=c.type;
+					if(sum<0){
+						clearInterval(Stimer);
+						gd.fillStyle="red";
+						gd.font="50px a"
+						gd.fillText("Game Over",oC.width/2-120,oC.height/2+60);
+					}
 				    //出炮弹
 				    var b = new Bullet(c.type);
 				    b.rotate=c.rotate;
